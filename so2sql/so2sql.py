@@ -4,7 +4,7 @@ from time import sleep
 
 from stackapi import StackAPI
 
-from .models import Question, Comment, Answer
+from .models import Base, Question, Comment, Answer
 from .utils import Utils
 
 
@@ -35,6 +35,19 @@ class So2Sql:
 
         self.question_ids_for_comments = []
         self.cumulative_total_comments_for_questions = []
+
+    # Function to drop all tables in the database
+    def drop_tables(self):
+        Base.metadata.drop_all(self.db_session.bind)
+    
+    # Function to create all tables in the database
+    def create_tables(self):
+        Base.metadata.create_all(self.db_session.bind)
+
+    # Function to drop and create all tables in the database
+    def drop_and_create_tables(self):
+        self.drop_tables()
+        self.create_tables()
 
     # Function to fetch questions from StackOverflow API
     # Endpoint URL: https://api.stackexchange.com/2.3/questions
