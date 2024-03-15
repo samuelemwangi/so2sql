@@ -17,9 +17,9 @@ setup(
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
     install_requires=[
-            "sqlalchemy",
-            "stackapi"
-            "bs4",
+            "SQLAlchemy",
+            "StackAPI",
+            "beautifulsoup4",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
