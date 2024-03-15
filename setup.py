@@ -9,6 +9,7 @@ setup(
     version=VERSION,
     author="samuelemwangi",
     author_email="sammiemwangi4@gmail.com",
+    url="https://github.com/samuelemwangi/so2sql",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
