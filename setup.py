@@ -2,7 +2,10 @@ from setuptools import setup, find_packages
 
 VERSION = "0.0.1"
 DESCRIPTION = "Library to fetch StackOverflow data and persist it to an SQL database"
-LONG_DESCRIPTION = open("Readme.md").read()
+LONG_DESCRIPTION = """
+Helps to fetch StackOverflow data and persist it to an SQL database. 
+Makes use of StackAPI and SQLAlchemy.
+"""
 
 setup(
     name="so2sql",
