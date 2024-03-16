@@ -31,7 +31,7 @@ question_response = json.loads(r"""[
                 "question_id": 78168946,
                 "link": "https://stackoverflow.com/questions/78168946/problem-playing-video-playlist-in-tkinter",
                 "title": "Problem playing video playlist in tkinter",
-                "body": "<p>i making a program that plays a video when it matches with a word that a person says, if it matches, the video shows in a tkinter label"
+                "body": "<p>GPT i making a program that plays a video when it matches with a word that a person says, if it matches, the video shows in a tkinter label"
             },
             {
                  "tags": [
@@ -62,7 +62,7 @@ question_response = json.loads(r"""[
                 "question_id": 78168947,
                 "link": "https://stackoverflow.com/questions/78168947/problem-playing-video-playlist-in-tkinter",
                 "title": "Problem playing video playlist",
-                "body": "<p>i making a program that plays a video when it matches with a word that a person says, if it matches, the video shows</p>"
+                "body": "<p>StackOverflow i making a program that plays a video when it matches with a word that a person says, if it matches, the video shows</p>"
             }
         ]
     """)
