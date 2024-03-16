@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.0.4"
+VERSION = "0.0.5"
 DESCRIPTION = "Library to fetch StackOverflow data and persist it to an SQL database"
 LONG_DESCRIPTION = """
 Helps to fetch StackOverflow data and persist it to an SQL database. 
@@ -20,7 +20,8 @@ setup(
             "SQLAlchemy",
             "StackAPI",
             "beautifulsoup4",
-            "numpy"
+            "numpy",
+            "pandas"
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

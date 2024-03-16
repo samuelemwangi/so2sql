@@ -28,13 +28,16 @@ class So2Sql:
         self.TO_DATE_STRING = to_date_string
         self.COOL_DOWN_TIME = cool_down_time
 
-        self.SITE = StackAPI('stackoverflow', key=self.stack_api_key)
-
         self.question_ids_for_answers = []
         self.cumulative_total_answers_for_questions = []
 
         self.question_ids_for_comments = []
-        self.cumulative_total_comments_for_questions = []
+        self.cumulative_total_comments_for_questions = []    
+
+        self.SITE = self.create_stack_api()
+
+    def create_stack_api(self):
+        return StackAPI('stackoverflow', key=self.stack_api_key)
 
     # Function to drop all tables in the database
     def drop_tables(self):
