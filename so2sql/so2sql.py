@@ -18,7 +18,6 @@ class So2Sql:
                  from_date_string='01-01-2023',
                  to_date_string='31-12-2023',
                  cool_down_time=20,
-                 maximum_question_retries=3,
                  questions_filter='!G(XS1)PpTDrxEP7Qbnkh7YPYaI',
                  questions_count_filter_1=[],
                  questions_count_filter_2=[]
@@ -33,7 +32,6 @@ class So2Sql:
         self.TO_DATE_STRING = to_date_string
         self.COOL_DOWN_TIME = cool_down_time
 
-        self.maximum_question_retries = maximum_question_retries
         self.questions_filter = questions_filter
         self.questions_count_filter_1 = questions_count_filter_1
         self.questions_count_filter_2 = questions_count_filter_2
@@ -69,102 +67,98 @@ class So2Sql:
         # Defines the maximum number of pages to fetch.
         self.SITE.max_pages = self.TARGET_QUESTIONS / self.TARGET_QUESTIONS_PER_PAGE
         self.SITE.page_size = self.TARGET_QUESTIONS_PER_PAGE
+       
 
-        questions_retries_counter = 0
+        # Use stack api to fetch the questions. The library handles pagination for us and returns when all pages are fetched
+        questions = self.SITE.fetch(
+            'questions',
+            sort='votes',
+            order='desc',
+            filter=self.questions_filter,
+            fromdate=Utils.convert_date_time_to_unix_timestamp(
+                self.FROM_DATE_STRING),
+            todate=Utils.convert_date_time_to_unix_timestamp(
+                self.TO_DATE_STRING)
+        )
+
         questions_counter = 0
     
         # To track the cumulative total of answers & comments for each question. Of course we start from 0
         prev_answers_count = 0
         prev_comments_count = 0
-        
-        while questions_retries_counter < self.maximum_question_retries and questions_counter < self.TARGET_QUESTIONS:
-            # Use stack api to fetch the questions. The library handles pagination for us and returns when all pages are fetched
-            questions = self.SITE.fetch(
-                'questions',
-                sort='votes',
-                order='desc',
-                filter=self.questions_filter,
-                fromdate=Utils.convert_date_time_to_unix_timestamp(
-                    self.FROM_DATE_STRING),
-                todate=Utils.convert_date_time_to_unix_timestamp(
-                    self.TO_DATE_STRING)
-            )
 
+        for question in questions['items']:
+            if questions_counter >= self.TARGET_QUESTIONS:
+                break
+            
+            question_title = question.get('title').lower()
+            question_body = Utils.remove_html_tags(question.get('body')).lower()
 
-            for question in questions['items']:
-                if questions_counter >= self.TARGET_QUESTIONS:
-                    break
-                
-                question_title = question.get('title').lower()
-                question_body = Utils.remove_html_tags(question.get('body')).lower()
+            # Only insert questions that contain the filter words in the title or body
+            if len(self.questions_count_filter_1) > 0 and len(self.questions_count_filter_2) > 0:
+                title_matches = any(word in question_title for word in self.questions_count_filter_1) or any(word in question_title for word in self.questions_count_filter_1)
+                body_matches = any(word in question_body for word in self.questions_count_filter_1) or any(word in question_body for word in self.questions_count_filter_2)
 
-                # Only insert questions that contain the filter words in the title or body
-                if len(self.questions_count_filter_1) > 0 and len(self.questions_count_filter_2) > 0:
-                    title_matches = any(word in question_title for word in self.questions_count_filter_1) or any(word in question_title for word in self.questions_count_filter_1)
-                    body_matches = any(word in question_body for word in self.questions_count_filter_1) or any(word in question_body for word in self.questions_count_filter_2)
+                if not (title_matches or body_matches):
+                    continue
 
-                    if not (title_matches or body_matches):
-                        continue
+            questions_counter += 1
 
-                questions_counter += 1
+            # Add question ids to the lists if they have answers
+            answer_count = int(question.get('answer_count', 0))
+            comment_count = int(question.get('comment_count', 0))
+            view_count = int(question.get('view_count', 0))
 
-                # Add question ids to the lists if they have answers
-                answer_count = int(question.get('answer_count', 0))
-                comment_count = int(question.get('comment_count', 0))
-                view_count = int(question.get('view_count', 0))
+            if answer_count > 0:
+                self.question_ids_for_answers.append(
+                    question['question_id'])
 
-                if answer_count > 0:
-                    self.question_ids_for_answers.append(
-                        question['question_id'])
+                curr_answers_count = answer_count + prev_answers_count
+                self.cumulative_total_answers_for_questions.append(
+                    curr_answers_count)
+                prev_answers_count = curr_answers_count
 
-                    curr_answers_count = answer_count + prev_answers_count
-                    self.cumulative_total_answers_for_questions.append(
-                        curr_answers_count)
-                    prev_answers_count = curr_answers_count
+            # Add question ids to the lists if they have comments
+            if comment_count > 0:
+                self.question_ids_for_comments.append(
+                    question['question_id'])
 
-                # Add question ids to the lists if they have comments
-                if comment_count > 0:
-                    self.question_ids_for_comments.append(
-                        question['question_id'])
+                curr_comments_count = comment_count + prev_comments_count
+                self.cumulative_total_comments_for_questions.append(
+                    curr_comments_count)
+                prev_comments_count = curr_comments_count
 
-                    curr_comments_count = comment_count + prev_comments_count
-                    self.cumulative_total_comments_for_questions.append(
-                        curr_comments_count)
-                    prev_comments_count = curr_comments_count
+            tags = question.get('tags')
+            tags_str = ""
 
-                tags = question.get('tags')
-                tags_str = ""
+            if isinstance(tags, tuple):
+                tags_str = ",".join(tags)
+            elif isinstance(tags, list):
+                tags_str = ",".join(tags)
+            else:
+                tags_str = str(tags).strip("[]")
 
-                if isinstance(tags, tuple):
-                    tags_str = ",".join(tags)
-                elif isinstance(tags, list):
-                    tags_str = ",".join(tags)
-                else:
-                    tags_str = str(tags).strip("[]")
+            # Insert questions data
+            self.db_session.add(Question(
+                question_id=question.get('question_id'),
+                title=question_title,
+                body=question_body,
+                creation_date=question.get('creation_date'),
+                last_edit_date=question.get('last_edit_date'),
+                last_activity_date=question.get('last_activity_date'),
+                score=question.get('score'),
+                answer_count=answer_count,
+                view_count=view_count,
+                comment_count=comment_count,
+                is_answered=question.get('is_answered'),
+                accepted_answer_id=question.get('accepted_answer_id'),
+                tags=tags_str,
+                owner_user_id=question.get('owner', {}).get('user_id')
+            ))
 
-                # Insert questions data
-                self.db_session.add(Question(
-                    question_id=question.get('question_id'),
-                    title=question_title,
-                    body=question_body,
-                    creation_date=question.get('creation_date'),
-                    last_edit_date=question.get('last_edit_date'),
-                    last_activity_date=question.get('last_activity_date'),
-                    score=question.get('score'),
-                    answer_count=answer_count,
-                    view_count=view_count,
-                    comment_count=comment_count,
-                    is_answered=question.get('is_answered'),
-                    accepted_answer_id=question.get('accepted_answer_id'),
-                    tags=tags_str,
-                    owner_user_id=question.get('owner', {}).get('user_id')
-                ))
+        self.db_session.commit()
 
-            self.db_session.commit()
-
-            questions_retries_counter += 1
-
-            sleep(self.COOL_DOWN_TIME)
+        sleep(self.COOL_DOWN_TIME)
 
     # Endpoint URL: https://api.stackexchange.com/2.3/questions/{ids}/answers
     # Docs URL: https://api.stackexchange.com/docs/answers-on-questions

@@ -99,9 +99,9 @@ class TestSo2Sql(TestCase):
                 self.assertEqual(so_2_sql.question_ids_for_comments,[])        
                 self.assertEqual(so_2_sql.cumulative_total_comments_for_questions, [])
 
-                self.assertEqual(so_2_sql.SITE.fetch.call_count, 3)
+                self.assertEqual(so_2_sql.SITE.fetch.call_count, 1)
                 self.assertEqual(so_2_sql.db_session.add.call_count, 0)
-                self.assertEqual(so_2_sql.db_session.commit.call_count, 3)
+                self.assertEqual(so_2_sql.db_session.commit.call_count, 1)
 
             mock_create_stack_api.assert_called_once()
 
@@ -135,41 +135,8 @@ class TestSo2Sql(TestCase):
                 self.assertEqual(so_2_sql.db_session.add.call_count, 2)
                 self.assertEqual(so_2_sql.db_session.commit.call_count, 1)
 
-            mock_create_stack_api.assert_called_once()
-    
-    def test_fetch_questions_data_with_retries(self):
-        db_session = MagicMock()
-        db_session.add = MagicMock()
-        db_session.commit = MagicMock()
-
-        STACK_OVERFLOW_NAMES_LOWER = []
-        AI_ASSISTANT_NAMES_LOWER = []
-
-        with patch.object(So2Sql, 'create_stack_api', return_value=MagicMock()) as mock_create_stack_api:
-            so_2_sql = So2Sql(
-                db_session=db_session, 
-                target_questions=4, 
-                target_questions_per_page=2,
-                questions_count_filter_1=STACK_OVERFLOW_NAMES_LOWER, 
-                questions_count_filter_2=AI_ASSISTANT_NAMES_LOWER,
-                cool_down_time=0
-            )
-
-            with patch.object(so_2_sql.SITE, 'fetch', return_value=question_data) as mock_fetch:
-                so_2_sql.fetch_questions_data()
-
-                self.assertEqual(so_2_sql.question_ids_for_answers, [78168946,78168947,78168946,78168947])        
-                self.assertEqual(so_2_sql.cumulative_total_answers_for_questions, [1,3,4,6])
-
-                self.assertEqual(so_2_sql.question_ids_for_comments,[78168947,78168947])        
-                self.assertEqual(so_2_sql.cumulative_total_comments_for_questions, [1,2])
-
-                self.assertEqual(so_2_sql.SITE.fetch.call_count, 2)
-                self.assertEqual(so_2_sql.db_session.add.call_count, 4)
-                self.assertEqual(so_2_sql.db_session.commit.call_count, 2)
-
-            mock_create_stack_api.assert_called_once()            
- 
+            mock_create_stack_api.assert_called_once()    
+   
     def test_fetch_answers_for_questions(self):
         db_session = MagicMock()
         db_session.add = MagicMock()
