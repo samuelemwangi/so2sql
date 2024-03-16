@@ -19,8 +19,8 @@ class So2Sql:
                  to_date_string='31-12-2023',
                  cool_down_time=20,
                  questions_filter='!G(XS1)PpTDrxEP7Qbnkh7YPYaI',
-                 questions_count_filter_1=[],
-                 questions_count_filter_2=[]
+                 questions_filter_sort='votes',
+                 questions_filter_order='desc'
                  ):
         self.db_session = db_session
         self.stack_api_key = stack_api_key
@@ -28,13 +28,20 @@ class So2Sql:
         self.TARGET_QUESTIONS = target_questions
         self.TARGET_QUESTIONS_PER_PAGE = target_questions_per_page
         self.DEFAULT_PAGE_SIZE = default_page_size
-        self.FROM_DATE_STRING = from_date_string
-        self.TO_DATE_STRING = to_date_string
+
+        self.FROM_DATE_STRING = "" if from_date_string is None else Utils.convert_date_time_to_unix_timestamp(
+            from_date_string)
+
+        self.TO_DATE_STRING = "" if to_date_string is None else Utils.convert_date_time_to_unix_timestamp(
+            to_date_string)
+
         self.COOL_DOWN_TIME = cool_down_time
 
-        self.questions_filter = questions_filter
-        self.questions_count_filter_1 = questions_count_filter_1
-        self.questions_count_filter_2 = questions_count_filter_2
+        self.QUESTIONS_FILTER_SORT = questions_filter_sort
+        self.QUESTIONS_FILTER_ORDER = questions_filter_order
+        self.QUESTIONS_FILTER = questions_filter
+
+        self.question_ids_tracker = set()
 
         self.question_ids_for_answers = []
         self.cumulative_total_answers_for_questions = []
@@ -60,49 +67,47 @@ class So2Sql:
         self.drop_tables()
         self.create_tables()
 
+    # Function to fetch tags from StackOverflow API
+    # Endpoint URL: https://api.stackexchange.com/2.3/tags/{tags}/info
+    # Docs URL: https://api.stackexchange.com/docs/tags-by-name
+    def fetch_tags_data(self, tags):       
+       return self.SITE.fetch('tags/{tags}/info', tags=tags)
+
     # Function to fetch questions from StackOverflow API
     # Endpoint URL: https://api.stackexchange.com/2.3/questions
     # Docs URL: https://api.stackexchange.com/docs/questions
-    def fetch_questions_data(self):
+    def fetch_questions_data(self, questions_filter_tagged=''):
         # Defines the maximum number of pages to fetch.
         self.SITE.max_pages = self.TARGET_QUESTIONS / self.TARGET_QUESTIONS_PER_PAGE
         self.SITE.page_size = self.TARGET_QUESTIONS_PER_PAGE
-       
 
         # Use stack api to fetch the questions. The library handles pagination for us and returns when all pages are fetched
         questions = self.SITE.fetch(
             'questions',
-            sort='votes',
-            order='desc',
-            filter=self.questions_filter,
-            fromdate=Utils.convert_date_time_to_unix_timestamp(
-                self.FROM_DATE_STRING),
-            todate=Utils.convert_date_time_to_unix_timestamp(
-                self.TO_DATE_STRING)
+            sort=self.QUESTIONS_FILTER_SORT,
+            order=self.QUESTIONS_FILTER_ORDER,
+            filter=self.QUESTIONS_FILTER,
+            fromdate=self.FROM_DATE_STRING,
+            todate=self.TO_DATE_STRING,
+            tagged=questions_filter_tagged
         )
 
-        questions_counter = 0
-    
         # To track the cumulative total of answers & comments for each question. Of course we start from 0
         prev_answers_count = 0
         prev_comments_count = 0
 
         for question in questions['items']:
-            if questions_counter >= self.TARGET_QUESTIONS:
-                break
             
+            question_id = question.get('question_id')
+
+            # Only insert unique question ids, otherwise skip
+            if question_id in self.question_ids_tracker:
+                continue
+            self.question_ids_tracker.add(question_id)
+
             question_title = question.get('title').lower()
-            question_body = Utils.remove_html_tags(question.get('body')).lower()
-
-            # Only insert questions that contain the filter words in the title or body
-            if len(self.questions_count_filter_1) > 0 and len(self.questions_count_filter_2) > 0:
-                title_matches = any(word in question_title for word in self.questions_count_filter_1) or any(word in question_title for word in self.questions_count_filter_1)
-                body_matches = any(word in question_body for word in self.questions_count_filter_1) or any(word in question_body for word in self.questions_count_filter_2)
-
-                if not (title_matches or body_matches):
-                    continue
-
-            questions_counter += 1
+            question_body = Utils.remove_html_tags(
+                question.get('body')).lower()
 
             # Add question ids to the lists if they have answers
             answer_count = int(question.get('answer_count', 0))
@@ -110,8 +115,7 @@ class So2Sql:
             view_count = int(question.get('view_count', 0))
 
             if answer_count > 0:
-                self.question_ids_for_answers.append(
-                    question['question_id'])
+                self.question_ids_for_answers.append(question_id)
 
                 curr_answers_count = answer_count + prev_answers_count
                 self.cumulative_total_answers_for_questions.append(
@@ -120,8 +124,7 @@ class So2Sql:
 
             # Add question ids to the lists if they have comments
             if comment_count > 0:
-                self.question_ids_for_comments.append(
-                    question['question_id'])
+                self.question_ids_for_comments.append(question_id)
 
                 curr_comments_count = comment_count + prev_comments_count
                 self.cumulative_total_comments_for_questions.append(
@@ -140,7 +143,7 @@ class So2Sql:
 
             # Insert questions data
             self.db_session.add(Question(
-                question_id=question.get('question_id'),
+                question_id=question_id,
                 title=question_title,
                 body=question_body,
                 creation_date=question.get('creation_date'),
@@ -205,7 +208,7 @@ class So2Sql:
                 self.db_session.add(Answer(
                     answer_id=answer.get('answer_id'),
                     question_id=answer.get('question_id'),
-                    body=Utils.remove_html_tags(answer.get('body')),
+                    body=Utils.remove_html_tags(answer.get('body')).lower(),
                     creation_date=answer.get('creation_date'),
                     last_edit_date=answer.get('last_edit_date'),
                     last_activity_date=answer.get('last_activity_date'),
@@ -268,7 +271,7 @@ class So2Sql:
                 self.db_session.add(Comment(
                     comment_id=comment.get('comment_id'),
                     post_id=comment.get('post_id'),
-                    body=Utils.remove_html_tags(comment.get('body')),
+                    body=Utils.remove_html_tags(comment.get('body')).lower(),
                     creation_date=comment.get('creation_date'),
                     edited=comment.get('edited'),
                     score=comment.get('score'),

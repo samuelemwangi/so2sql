@@ -1,5 +1,55 @@
 import json
 
+tags_response = json.loads(r"""[
+        {
+        "has_synonyms": false,
+        "is_moderator_only": false,
+        "is_required": false,
+        "count": 569,
+        "name": "chatgpt-api"
+        },
+        {
+        "has_synonyms": false,
+        "is_moderator_only": false,
+        "is_required": false,
+        "count": 248,
+        "name": "github-copilot"
+        },
+        {
+        "has_synonyms": false,
+        "is_moderator_only": false,
+        "is_required": false,
+        "count": 72,
+        "name": "google-gemini"
+        },
+        {
+        "has_synonyms": false,
+        "is_moderator_only": false,
+        "is_required": false,
+        "count": 38,
+        "name": "gemini"
+        },
+        {
+        "has_synonyms": false,
+        "is_moderator_only": false,
+        "is_required": false,
+        "count": 9,
+        "name": "amazon-codewhisperer"
+        },
+        {
+        "has_synonyms": false,
+        "is_moderator_only": false,
+        "is_required": false,
+        "count": 4,
+        "name": "claude"
+        }
+    ]
+    """)
+
+tags_data = {
+    "items": tags_response
+}
+
 question_response = json.loads(r"""[
             {
                 "tags": [
