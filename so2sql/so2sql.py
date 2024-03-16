@@ -41,6 +41,9 @@ class So2Sql:
         self.QUESTIONS_FILTER_ORDER = questions_filter_order
         self.QUESTIONS_FILTER = questions_filter
 
+        self.prev_answers_count = 0
+        self.prev_comments_count = 0
+
         self.question_ids_tracker = set()
 
         self.question_ids_for_answers = []
@@ -92,10 +95,6 @@ class So2Sql:
             tagged=questions_filter_tagged
         )
 
-        # To track the cumulative total of answers & comments for each question. Of course we start from 0
-        prev_answers_count = 0
-        prev_comments_count = 0
-
         for question in questions['items']:
             
             question_id = question.get('question_id')
@@ -117,19 +116,19 @@ class So2Sql:
             if answer_count > 0:
                 self.question_ids_for_answers.append(question_id)
 
-                curr_answers_count = answer_count + prev_answers_count
+                curr_answers_count = answer_count + self.prev_answers_count
                 self.cumulative_total_answers_for_questions.append(
                     curr_answers_count)
-                prev_answers_count = curr_answers_count
+                self.prev_answers_count = curr_answers_count
 
             # Add question ids to the lists if they have comments
             if comment_count > 0:
                 self.question_ids_for_comments.append(question_id)
 
-                curr_comments_count = comment_count + prev_comments_count
+                curr_comments_count = comment_count + self.prev_comments_count
                 self.cumulative_total_comments_for_questions.append(
                     curr_comments_count)
-                prev_comments_count = curr_comments_count
+                self.prev_comments_count = curr_comments_count
 
             tags = question.get('tags')
             tags_str = ""
