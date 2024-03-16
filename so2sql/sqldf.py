@@ -16,7 +16,7 @@ class SqlDf:
             [total, percent], axis=1, keys=['Total', 'Percent'])
         return missing_values
     
-    def get_combined_text_df(self, df):
+    def get_combined_text_df(self):
         question_titles = self.db_session.query(
             Question.question_id.label('item_id'),
             Question.title.label('item_text'),
