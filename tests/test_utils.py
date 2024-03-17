@@ -3,10 +3,17 @@ from unittest import TestCase
 from so2sql.utils import Utils
 
 class TestUtils(TestCase):
-    def test_remove_html_tags(self):
-        sample_html = "<div><p>Some text</p><code><html><body>Hello</body></html><</code></div>"
-        actual = Utils.remove_html_tags(sample_html)
-        expected = "Some text"
+    def test_clean_html_text(self):
+        sample_html = """
+            <div><p>Some text</p><code><html><body>Hello</body></html><</code>
+            <blockquote>
+            <p>&lt;TimeLimit&lt;Shell_Class&lt; TEST-v1 &gt;&gt;&gt;</p>
+            </blockquote>
+            <div>Some more text</div>
+            </div>
+        """
+        actual = Utils.clean_html_text(sample_html)
+        expected = "Some text. Some more text."
         self.assertEqual(actual, expected)
 
     def test_convert_date_time_to_unix_timestamp(self):

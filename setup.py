@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.0.11"
+VERSION = "0.0.12"
 DESCRIPTION = "Library to fetch StackOverflow data and persist it to an SQL database"
 LONG_DESCRIPTION = """
 Helps to fetch StackOverflow data and persist it to an SQL database. 
@@ -11,7 +11,6 @@ setup(
     name="so2sql",
     version=VERSION,
     author="samuelemwangi",
-    author_email="sammiemwangi4@gmail.com",
     url="https://github.com/samuelemwangi/so2sql",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,

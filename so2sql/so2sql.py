@@ -105,7 +105,7 @@ class So2Sql:
             self.question_ids_tracker.add(question_id)
 
             question_title = question.get('title').lower()
-            question_body = Utils.remove_html_tags(
+            question_body = Utils.clean_html_text(
                 question.get('body')).lower()
 
             # Add question ids to the lists if they have answers
@@ -207,7 +207,7 @@ class So2Sql:
                 self.db_session.add(Answer(
                     answer_id=answer.get('answer_id'),
                     question_id=answer.get('question_id'),
-                    body=Utils.remove_html_tags(answer.get('body')).lower(),
+                    body=Utils.clean_html_text(answer.get('body')).lower(),
                     creation_date=answer.get('creation_date'),
                     last_edit_date=answer.get('last_edit_date'),
                     last_activity_date=answer.get('last_activity_date'),
@@ -270,7 +270,7 @@ class So2Sql:
                 self.db_session.add(Comment(
                     comment_id=comment.get('comment_id'),
                     post_id=comment.get('post_id'),
-                    body=Utils.remove_html_tags(comment.get('body')).lower(),
+                    body=Utils.clean_html_text(comment.get('body')).lower(),
                     creation_date=comment.get('creation_date'),
                     edited=comment.get('edited'),
                     score=comment.get('score'),
