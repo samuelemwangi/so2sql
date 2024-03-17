@@ -18,12 +18,27 @@ class Utils:
 
         # Remove other HTML tags
         text = BeautifulSoup(text, "html.parser").get_text()
+
+        # # Remove any content between [ and ] characters
+        text = re.sub(r'\[.*?\]', '', str(text), flags=re.DOTALL)
+
+        # # Remove directory paths
+        text = re.sub(r'\/.*?\/', '', str(text), flags=re.DOTALL)
+
+        # # Remove any content between { and } characters
+        text = re.sub(r'\{.*?\}', '', str(text), flags=re.DOTALL)
+
+        # # Remove links
+        text = re.sub(r'http\S+', '', str(text), flags=re.DOTALL)
         
         # Replace any number of consecutive newline characters with a period and a space
         text = re.sub(r'\n+', '. ', str(text), flags=re.DOTALL)
 
         # Replace any number of consecutive space characters with a single space
         text = re.sub(r'\s+', ' ', str(text), flags=re.DOTALL)
+
+        # Replace space and period with a single period
+        text = re.sub(r'\s\.', '.', str(text), flags=re.DOTALL)
 
         # Replace any number of consecutive . characters with a single .
         text = re.sub(r'\.+', '.', str(text), flags=re.DOTALL)

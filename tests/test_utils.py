@@ -5,12 +5,18 @@ from so2sql.utils import Utils
 class TestUtils(TestCase):
     def test_clean_html_text(self):
         sample_html = """
+            <html>
             <div><p>Some text</p><code><html><body>Hello</body></html><</code>
             <blockquote>
             <p>&lt;TimeLimit&lt;Shell_Class&lt; TEST-v1 &gt;&gt;&gt;</p>
             </blockquote>
+            {yaml.dump(docs)}
+            [<future at 0x7f75dfcc6fb0 state=finished raised authenticationerror>] 
             <div>Some more text</div>
+            https://sdk.vercel.ai/docs/guides/providers/openai#guide-handling-errors
+            https://www.npmjs.com/package/ai.
             </div>
+            </html>
         """
         actual = Utils.clean_html_text(sample_html)
         expected = "Some text. Some more text."
