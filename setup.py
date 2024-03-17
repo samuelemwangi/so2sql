@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.0.13"
+VERSION = "0.0.14"
 DESCRIPTION = "Library to fetch StackOverflow data and persist it to an SQL database"
 LONG_DESCRIPTION = """
 Helps to fetch StackOverflow data and persist it to an SQL database. 

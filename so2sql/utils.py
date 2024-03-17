@@ -19,6 +19,9 @@ class Utils:
         # Remove other HTML tags
         text = BeautifulSoup(text, "html.parser").get_text()
 
+        # Remove any content between <tag> and </tag> tags (including the tags)
+        text = re.sub(r'<.*?>.*?</.*?>', '', str(text), flags=re.DOTALL)
+
         # # Remove any content between [ and ] characters
         text = re.sub(r'\[.*?\]', '', str(text), flags=re.DOTALL)
 

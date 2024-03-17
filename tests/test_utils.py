@@ -16,6 +16,7 @@ class TestUtils(TestCase):
             https://sdk.vercel.ai/docs/guides/providers/openai#guide-handling-errors
             https://www.npmjs.com/package/ai.
             </div>
+            <script setup> </script>
             </html>
         """
         actual = Utils.clean_html_text(sample_html)
